@@ -69,6 +69,20 @@
 
     ];
 
+    this.isDrag = false;
+    this.canvasValid = false;
+    this.mySel = {};
+    this.offsetx = {};
+    this.offsety = {};
+
+    // Padding and border style widths for mouse offsets
+    this.stylePaddingLeft = {};
+    this.stylePaddingTop = {};
+    this.styleBorderLef= {};
+    this.styleBorderTop = {};
+
+
+    setInterval(this.draw.bind(this), 1000);
 
   };
 
@@ -79,15 +93,18 @@
     this.canvas.height = this.gameDetails.height;
     this.ctx = canvas.getContext( '2d' );
 
+
     this.helpCanvas = document.getElementById( 'canvas' );
     this.helpCanvas.width = this.gameDetails.width;
     this.helpCanvas.height = this.gameDetails.height;
-    this.gelpCtx = canvas.getContext( '2d' );
+    this.helpCtx = canvas.getContext( '2d' );
 
 
     this.board = this._createBoard(100, 100 );
     this.boardEnemy = this._createBoard(500, 100 );
     this.canvas.onmousedown = this._mouseDown.bind(this);
+    this.canvas.onmouseup = this._mouseUp.bind(this);
+
     var boat = new this.Boat(3,10,10,0,null);
     this.boats.push(boat);
     this._createBoats();
@@ -101,6 +118,7 @@
   };
 
   Game.prototype._createBoard = function(x, y){
+    this.ColumnsAndRows = [];
     console.log("create board");
     for(var row = 0; row < this.gameDetails.rows; row++){
       for(var column =0; column < this.gameDetails.columns; column++ ){
@@ -127,6 +145,7 @@
   }
 
   Game.prototype._drawACeil = function(x, y, width, height, color, lineWidth){
+    console.log("ceil");
     this.ctx.lineWidth = lineWidth || '1';
     this.ctx.beginPath();
     this.ctx.rect(x , y, width, height);
@@ -143,62 +162,101 @@
   };
 
   Game.prototype.draw = function(){
+    console.log("canvas valid 3", this.canvasValid);
+
+    if (this.canvasValid == false) {
+      console.log("draw");
+
+      this.clear(this.ctx);
+
+      this._createBoard();
+
+      this.canvasValid = true;
+    }
 
   };
 
- Game.prototype._getMouse = function(e){
-    var element = canvas, offsetX = 0, offsetY = 0;
-
-    if (element.offsetParent) {
-      do {
-        offsetX += element.offsetLeft;
-        offsetY += element.offsetTop;
-      } while ((element = element.offsetParent));
-    }
-
-    // Add padding and border style widths to offset
-    //
-    this.mouse.x = e.pageX - offsetX;
-    this.mouse.y = e.pageY - offsetY;
-
-    console.log("mouse coord", this.mouse);
-  }
 
   Game.prototype._mouseDown = function(e){
     this._getMouse(e);
-    /*clear(gctx);
-    var l = boxes.length;
+    this.clear(this.helpCtx);
+    var l = this.boats.length;
     for (var i = l-1; i >= 0; i--) {
       // draw shape onto ghost context
-      drawshape(gctx, boxes[i], 'black', 'black');
+      //drawshape(this.helpCanvas, this.boats[i], 'black', 'black');
 
       // get image data at the mouse x,y pixel
-      var imageData = gctx.getImageData(mx, my, 1, 1);
-      var index = (mx + my * imageData.width) * 4;
+      var imageData = this.helpCtx.getImageData(this.mouse.x, this.mouse.y, 1, 1);
+      var index = (this.mouse.x + this.mouse.y * imageData.width) * 4;
 
       // if the mouse pixel exists, select and break
       if (imageData.data[3] > 0) {
-        mySel = boxes[i];
-        offsetx = mx - mySel.x;
-        offsety = my - mySel.y;
-        mySel.x = mx - offsetx;
-        mySel.y = my - offsety;
-        isDrag = true;
-        canvas.onmousemove = myMove;
-        invalidate();
-        clear(gctx);
+        this.mySel = this.boats[i];
+        this.offsetx = this.mouse.x - mySel.x;
+        this.offsety = this.mouse.y - mySel.y;
+        this.mySel.x = this.mouse.x - offsetx;
+        this.mySel.y = this.mouse.y - offsety;
+        this.isDrag = true;
+        this.canvas.onmousemove = this._mouseMove.bind(this);
+        this.invalidate();
+        this.clear(this.helpCtx);
         return;
       }
 
     }
     // havent returned means we have selected nothing
-    mySel = null;
+    this.mySel = null;
     // clear the ghost canvas for next time
-    clear(gctx);
+    this.clear(this.helpCtx);
     // invalidate because we might need the selection border to disappear
-    invalidate();*/
+    this.invalidate();
   };
 
+  Game.prototype._mouseUp= function(){
+    this.isDrag = false;
+    this.canvas.onmousemove = null;
+  }
+
+  Game.prototype._mouseMove = function(e){
+    if (isDrag){
+      getMouse(e);
+
+      mySel.x = mx - offsetx;
+      mySel.y = my - offsety;
+
+      // something is changing position so we better invalidate the canvas!
+      this.invalidate();
+    }
+  };
+
+  Game.prototype.clear = function(c){
+    console.log("what canvas ", c);
+      c.clearRect(0, 0, this.gameDetails.width, this.gameDetails.height);
+  };
+
+  Game.prototype._getMouse = function(e){
+     var element = canvas, offsetX = 0, offsetY = 0;
+
+     if (element.offsetParent) {
+       do {
+         offsetX += element.offsetLeft;
+         offsetY += element.offsetTop;
+       } while ((element = element.offsetParent));
+     }
+
+     // Add padding and border style widths to offset
+     //
+     this.mouse.x = e.pageX - offsetX;
+     this.mouse.y = e.pageY - offsetY;
+
+     console.log("mouse coord", this.mouse);
+   };
+
+  Game.prototype.invalidate = function(){
+      this.canvasValid = false;
+      console.log("canvas valid 222222 ", this.canvasValid);
+
+  }
 
 
 
