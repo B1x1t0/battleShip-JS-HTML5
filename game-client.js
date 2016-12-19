@@ -51,6 +51,8 @@
       this.w = w;
       this.h = h * size;
       this.orientation = orientation || 0;
+      this.startX = 0;
+      this.startY = 0;
     };
 
     this.Boat.prototype.getPato = function(){
@@ -110,7 +112,7 @@
 
     var boat = new this.Boat(3,10,10,0,null,this.gameDetails.ceilWidth, this.gameDetails.ceilWidth);
     this.boats.push(boat);
-    this._createBoats();
+    this._drawBoats();
 
     this._drawABoard(100,100, this.board);
     this._drawABoard(500,100, this.boardEnemy);
@@ -131,15 +133,15 @@
         var ceil = new this.Ceil();
         ceil.row = this.gameDetails.alphabet[row];
         ceil.column = column;
-        ceil.x = column * this.gameDetails.ceilWidth;
-        ceil.y = row * this.gameDetails.ceilHeight;
+        ceil.x = column * this.gameDetails.ceilWidth + x;
+        ceil.y = row * this.gameDetails.ceilHeight + y;
         board.push(ceil);
       }
     }
     return board;
   };
 
-  Game.prototype._createBoats = function(){
+  Game.prototype._drawBoats = function(){
     for(var i = 0; i<this.boats.length; i++){
       this._drawABoat(this.boats[i].x, this.boats[i].y, this.boats[i].size, this.boats[i].rotation)
     }
@@ -154,7 +156,7 @@
 
   Game.prototype._drawABoard = function(x, y, board){
     for(var ceil = 0; ceil < board.length; ceil++){
-        this._drawACeil(x + board[ceil].x , y + board[ceil].y, this.gameDetails.ceilWidth, this.gameDetails.ceilHeight, null, '1');
+        this._drawACeil(board[ceil].x ,  board[ceil].y, this.gameDetails.ceilWidth, this.gameDetails.ceilHeight, null, '1');
     }
   };
 
@@ -168,16 +170,14 @@
   };
 
   Game.prototype.draw = function(){
-    console.log("canvas valid 3", this.canvasValid);
 
     if (this.canvasValid == false) {
-      console.log("draw");
 
       this.clear(this.ctx);
 
       this._drawABoard(100,100, this.board);
       this._drawABoard(500,100, this.boardEnemy);
-      this._createBoats();
+      this._drawBoats();
 
 
       this.canvasValid = true;
@@ -194,7 +194,7 @@
     for (var i = l-1; i >= 0; i--) {
       // draw shape onto ghost context
       console.log("boooooatsss ",this.boats[i]);
-      this.drawshape(this.helpCtx, this.boats[i], 'black', 'black');
+      this.drawshape(this.helpCtx, this.boats[i], 'red', 'black');
 
       // get image data at the mouse x,y pixel
       var imageData = this.helpCtx.getImageData(this.mouse.x, this.mouse.y, 1, 1);
@@ -211,6 +211,9 @@
         this.mySel.y = this.mouse.y - this.offsety;
         this.isDrag = true;
         this.canvas.onmousemove = this._mouseMove.bind(this);
+        this.boats[i] = this.mySel;
+        console.log("MI NUEVO BARCO ", this.boats[i]);
+
         this.invalidate();
         this.clear(this.helpCtx);
         return;
@@ -218,6 +221,7 @@
 
     }
     // havent returned means we have selected nothing
+    this.boatz[i] = this.mySel;
     this.mySel = null;
     // clear the ghost canvas for next time
     this.clear(this.helpCtx);
@@ -227,23 +231,38 @@
 
 
   Game.prototype.drawshape = function(context, shape, fill) {
-    context.fillStyle = fill;
-
-
+      //context.fillStyle = fill;
+      console.log("DRAW SHAPE");
       this.mouse.x = shape.x;
       this.mouse.y = shape.y;
 
+      console.log("MI BOAT", shape);
 
     // We can skip the drawing of elements that have moved off the screen:
     if (shape.x > this.gameDetails.width || shape.y > this.gameDetails.height ||
         shape.x + shape.w < 0 || shape.y + shape.h < 0) {
-      if (shape.rotation != 0) { context.restore(); }
+            if (shape.rotation != 0) { context.restore(); }
+
       return;
     }
 
     context.fillRect(this.mouse.x,this.mouse.y,shape.w,shape.h);
-
     if (shape.rotation != 0) { context.restore(); }
+  }
+
+
+  Game.prototype._checkBoatInCell = function(boat){
+    var posX = boat.x;
+    var posY = boat.y;
+    for(var i = 0;i<this.board.length; i++){
+      var ceil = this.board[i];
+      if(posX >= ceil.x && posX < (ceil.x + this.gameDetails.ceilWidth) &&
+          posY >= ceil.y && posY <(ceil.y + this.gameDetails.ceilHeight)){
+
+        console.log("Está en la celda ", i);
+
+      }
+    }
   }
 
 
@@ -253,13 +272,11 @@
   }
 
   Game.prototype._mouseMove = function(e){
-    console.log("mouse Move");
     if (this.isDrag){
       this._getMouse(e);
-
       this.mySel.x = this.mouse.x - this.offsetx;
       this.mySel.y = this.mouse.y - this.offsety;
-
+      this._checkBoatInCell(this.mySel);
       // something is changing position so we better invalidate the canvas!
       this.invalidate();
     }
@@ -284,14 +301,12 @@
      this.mouse.x = e.pageX - offsetX;
      this.mouse.y = e.pageY - offsetY;
 
-     console.log("mouse coord", this.mouse);
+     //console.log("mouse coord", this.mouse);
    };
 
   Game.prototype.invalidate = function(){
       this.canvasValid = false;
   }
-
-
 
   var battleShip = new Game();
   battleShip.init();
