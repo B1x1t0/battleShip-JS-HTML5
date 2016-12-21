@@ -50,7 +50,7 @@
       this.y = y || 0;
       this.w = w;
       this.h = h * size;
-      this.orientation = orientation || 0;
+      this.orientation = orientation || 'vertical';
       this.startX = 0;
       this.startY = 0;
     };
@@ -105,16 +105,16 @@
     this.helpCtx = canvas.getContext( '2d' );
 
 
-    this.board = this._createBoard(100, 100);
+    this.board = this._createBoard(0, 0);
     this.boardEnemy = this._createBoard(500, 100);
     this.canvas.onmousedown = this._mouseDown.bind(this);
     this.canvas.onmouseup = this._mouseUp.bind(this);
 
-    var boat = new this.Boat(3,10,10,0,null,this.gameDetails.ceilWidth, this.gameDetails.ceilWidth);
+    var boat = new this.Boat(3,10,10,0,'vertical',8, 8);
     this.boats.push(boat);
     this._drawBoats();
 
-    this._drawABoard(100,100, this.board);
+    this._drawABoard(0,0, this.board);
     this._drawABoard(500,100, this.boardEnemy);
 
     //this.canvas.onmouseup = this._mouseUp.bind();
@@ -143,7 +143,7 @@
 
   Game.prototype._drawBoats = function(){
     for(var i = 0; i<this.boats.length; i++){
-      this._drawABoat(this.boats[i].x, this.boats[i].y, this.boats[i].size, this.boats[i].rotation)
+      this._drawABoat(this.boats[i].x, this.boats[i].y, this.boats[i].size, this.boats[i].rotation, this.boats[i].w, this.boats[i].h)
     }
   }
 
@@ -161,11 +161,11 @@
   };
 
 
-  Game.prototype._drawABoat = function(x, y, size , rotation){
+  Game.prototype._drawABoat = function(x, y, size , rotation, w, h){
     this.ctx.lineWidth =  '1';
     this.ctx.beginPath();
     this.ctx.color = 'rgb(33,67,31)';
-    this.ctx.rect(x , y, this.gameDetails.ceilWidth, this.gameDetails.ceilWidth * size);
+    this.ctx.rect(x , y, w, h * size);
     this.ctx.fill();
   };
 
@@ -175,7 +175,7 @@
 
       this.clear(this.ctx);
 
-      this._drawABoard(100,100, this.board);
+      this._drawABoard(0,0, this.board);
       this._drawABoard(500,100, this.boardEnemy);
       this._drawBoats();
 
@@ -254,14 +254,37 @@
   Game.prototype._checkBoatInCell = function(boat){
     var posX = boat.x;
     var posY = boat.y;
+    var maxX = boat.orientation == 'horizontal'? this.gameDetails.ceilWidth * boat.size + boat.x: boat.x;
+    var maxY = (boat.orientation == 'vertical') ? (this.gameDetails.ceilHeight * (boat.size- 1))+ boat.y : boat.y;
+
     for(var i = 0;i<this.board.length; i++){
       var ceil = this.board[i];
       if(posX >= ceil.x && posX < (ceil.x + this.gameDetails.ceilWidth) &&
           posY >= ceil.y && posY <(ceil.y + this.gameDetails.ceilHeight)){
 
-        console.log("Está en la celda ", i);
+        //console.log("Está en la celda ", i, maxX, maxY);
+        /*for(var j = 0;j<this.board.length; j++){
+          var lastCeil = this.board[j];
+          if(maxX >= lastCeil.x && maxX < (lastCeil.x + this.gameDetails.ceilWidth) &&
+              maxY >= lastCeil.y && maxY <(lastCeil.y + this.gameDetails.ceilHeight)){
+                console.log("Barco ENTERO", j);
 
-      }
+              }
+        }*/
+        var lastCeil = this.board[i + ((boat.size - 1) * 10)];
+        console.log(i + ((boat.size - 1) * 10));
+        if(lastCeil){
+          console.log("x   ",maxX, lastCeil.x, lastCeil.x + this.gameDetails.ceilWidth );
+          console.log("y   ",maxY, lastCeil.y, lastCeil.y+ this.gameDetails.ceilHeight );
+          if(maxX >= lastCeil.x && maxX < (lastCeil.x + this.gameDetails.ceilWidth) &&
+             maxY >= lastCeil.y && maxY <(lastCeil.y + this.gameDetails.ceilHeight)
+            ){
+                console.log("Barco ENTERO", i);
+
+              }
+
+          }
+       }
     }
   }
 
