@@ -39,10 +39,6 @@
     this.boardEnemy = {};
     this.boats = [];
 
-
-
-
-
     this.Boat = function(size,x,y,orientation,img, w, h){
       this.size =  size || 3;
       this.img = {};
@@ -51,20 +47,35 @@
       this.w = w;
       this.h = h * size;
       this.orientation = orientation || 'vertical';
-      this.startX = 0;
-      this.startY = 0;
+      this.startX = x;
+      this.startY = y;
+      this.data = {
+        ceils: []
+      };
     };
 
-    this.Boat.prototype.getPato = function(){
-      return this;
-    }
+    this.Button = function(x,y, w, h, type, img){
+      this.img = {};
+      this.x = x || 0;
+      this.y = y || 0;
+      this.w = w;
+      this.h = h;
+      this.type = type || null;
+    };
+
+    this.buttons = [];
+
+
 
     this.Ceil = function(){
         this.row =  "";
         this.column = 0;
-        this.data = {};
+        this.data = {
+          ceils: []
+        };
         this.x = 0;
         this.y = 0;
+        this.boat = false;
     };
 
 
@@ -77,8 +88,13 @@
     this.isDrag = false;
     this.canvasValid = false;
     this.mySel = {};
+    this.myLastSel = {};
     this.offsetx = {};
     this.offsety = {};
+    this.isPossibleInCeil = true;
+    this.isPossibleBoat = false;
+    this.ceilsInBoat = [];
+    this.lastCeilsInBoat = [];
 
     // Padding and border style widths for mouse offsets
     this.stylePaddingLeft = {};
@@ -105,15 +121,21 @@
     this.helpCtx = canvas.getContext( '2d' );
 
 
-    this.board = this._createBoard(0, 0);
+    this.board = this._createBoard(100, 100);
     this.boardEnemy = this._createBoard(500, 100);
     this.canvas.onmousedown = this._mouseDown.bind(this);
     this.canvas.onmouseup = this._mouseUp.bind(this);
+    this.canvas.onclick = this._onClickAction.bind(this);
 
     var boat = new this.Boat(3,10,10,0,'vertical',8, 8);
+    var boat2 = new this.Boat(2,10,100,0,'vertical',10, 10);
+
+    var buttonOrientation = new this.Button(200,200,50,30,'ortientation',null);
+    this.buttons.push(buttonOrientation);
+    this.boats.push(boat2);
     this.boats.push(boat);
     this._drawBoats();
-
+    this._drawButtons();
     this._drawABoard(0,0, this.board);
     this._drawABoard(500,100, this.boardEnemy);
 
@@ -147,6 +169,13 @@
     }
   }
 
+  Game.prototype._drawButtons = function(){
+    for(var i = 0; i<this.buttons.length; i++){
+
+      this._drawAButton(this.buttons[i].x, this.buttons[i].y, this.buttons[i].w, this.buttons[i].h, this.buttons[i].img, 'rgb(0,255,0)')
+    }
+  }
+
   Game.prototype._drawACeil = function(x, y, width, height, color, lineWidth){
     this.ctx.lineWidth = lineWidth || '1';
     this.ctx.beginPath();
@@ -164,8 +193,16 @@
   Game.prototype._drawABoat = function(x, y, size , rotation, w, h){
     this.ctx.lineWidth =  '1';
     this.ctx.beginPath();
-    this.ctx.color = 'rgb(33,67,31)';
+    this.ctx.fillColor = 'rgb(33,67,31)';
     this.ctx.rect(x , y, w, h * size);
+    this.ctx.fill();
+  };
+
+  Game.prototype._drawAButton = function(x, y, w, h, img, fill){
+    this.ctx.lineWidth =  '1';
+    this.ctx.beginPath();
+    this.ctx.fillColor = fill;
+    this.ctx.rect(x , y, w, h);
     this.ctx.fill();
   };
 
@@ -178,6 +215,7 @@
       this._drawABoard(0,0, this.board);
       this._drawABoard(500,100, this.boardEnemy);
       this._drawBoats();
+      this._drawButtons();
 
 
       this.canvasValid = true;
@@ -186,42 +224,92 @@
   };
 
 
-  Game.prototype._mouseDown = function(e){
+  Game.prototype._onClickAction = function(e){
+    //console.log("click ", e);
+    /*this.isPossibleInCeil = true;
+    this.isPossibleBoat = false;
     this._getMouse(e);
     this.clear(this.helpCtx);
     var l = this.boats.length;
-    console.log(this.boats, this.boats.length);
+    //console.log(this.boats, this.boats.length);
     for (var i = l-1; i >= 0; i--) {
       // draw shape onto ghost context
-      console.log("boooooatsss ",this.boats[i]);
-      this.drawshape(this.helpCtx, this.boats[i], 'red', 'black');
+      //console.log("boooooatsss ",this.boats[i], i);
+      console.log(this.mouse.x, this.boats[i].x);
+      console.log(this._clickOnBoat(this.boats[i]));
+      if(this._clickOnBoat(this.boats[i])){
+          this.drawshape(this.helpCtx, this.boats[i], 'red', 'black');
 
-      // get image data at the mouse x,y pixel
-      var imageData = this.helpCtx.getImageData(this.mouse.x, this.mouse.y, 1, 1);
-      console.log(imageData);
-      var index = (this.mouse.x + this.mouse.y * imageData.width) * 4;
+          // get image data at the mouse x,y pixel
+          var imageData = this.helpCtx.getImageData(this.mouse.x, this.mouse.y, 1, 1);
+          console.log(imageData, imageData.data[3]);
+          var index = (this.mouse.x + this.mouse.y * imageData.width) * 4;
 
-      // if the mouse pixel exists, select and break
-      if (imageData.data[3] > 0) {
-        this.mySel = this.boats[i];
-        console.log("SELECTION",this.mySel);
-        this.offsetx = this.mouse.x - this.mySel.x;
-        this.offsety = this.mouse.y - this.mySel.y;
-        this.mySel.x = this.mouse.x - this.offsetx;
-        this.mySel.y = this.mouse.y - this.offsety;
-        this.isDrag = true;
-        this.canvas.onmousemove = this._mouseMove.bind(this);
-        this.boats[i] = this.mySel;
-        console.log("MI NUEVO BARCO ", this.boats[i]);
-
-        this.invalidate();
-        this.clear(this.helpCtx);
-        return;
+          // if the mouse pixel exists, select and break
+          if (imageData.data[3] > 0) {
+            this.mySel = this.boats[i];
+            console.log("SELECTION",this.mySel);
+            this.offsetx = this.mouse.x - this.mySel.x;
+            this.offsety = this.mouse.y - this.mySel.y;
+            this.mySel.x = this.mouse.x - this.offsetx;
+            this.mySel.y = this.mouse.y - this.offsety;
+            this.isDrag = true;
+            this.canvas.onmousemove = this._mouseMove.bind(this);
+            this.invalidate();
+            this.clear(this.helpCtx);
+            return;
+          }
       }
 
     }
     // havent returned means we have selected nothing
-    this.boatz[i] = this.mySel;
+    //this.boatz[i] = this.mySel;
+    this.mySel = null;
+    // clear the ghost canvas for next time
+    this.clear(this.helpCtx);
+    // invalidate because we might need the selection border to disappear
+    this.invalidate();*/
+  };
+
+
+  Game.prototype._mouseDown = function(e){
+
+    this._getMouse(e);
+    this.clear(this.helpCtx);
+    var l = this.boats.length;
+    //console.log(this.boats, this.boats.length);
+    for (var i = l-1; i >= 0; i--) {
+      // draw shape onto ghost context
+      //console.log("boooooatsss ",this.boats[i], i);
+      //console.log(this.mouse.x, this.boats[i].x);
+      //console.log(this._clickOnBoat(this.boats[i]));
+      if(this._clickOnBoat(this.boats[i])){
+          this.drawshape(this.helpCtx, this.boats[i], 'red', 'black');
+
+          // get image data at the mouse x,y pixel
+          var imageData = this.helpCtx.getImageData(this.mouse.x, this.mouse.y, 1, 1);
+          //console.log(imageData, imageData.data[3]);
+          var index = (this.mouse.x + this.mouse.y * imageData.width) * 4;
+
+          // if the mouse pixel exists, select and break
+          if (imageData.data[3] > 0) {
+            this.mySel = this.boats[i];
+            console.log("SELECTION",this.mySel);
+            this.offsetx = this.mouse.x - this.mySel.x;
+            this.offsety = this.mouse.y - this.mySel.y;
+            this.mySel.x = this.mouse.x - this.offsetx;
+            this.mySel.y = this.mouse.y - this.offsety;
+            this.isDrag = true;
+            this.canvas.onmousemove = this._mouseMove.bind(this);
+            this.invalidate();
+            this.clear(this.helpCtx);
+            return;
+          }
+      }
+
+    }
+    // havent returned means we have selected nothing
+    //this.boatz[i] = this.mySel;
     this.mySel = null;
     // clear the ghost canvas for next time
     this.clear(this.helpCtx);
@@ -229,15 +317,23 @@
     this.invalidate();
   };
 
+  Game.prototype._clickOnBoat = function(boat){
+
+    console.log(this.mouse.x, this.mouse.y,  boat.x, boat.x + boat.w, boat.y, boat.y + boat.h);
+    if(this.mouse.x > boat.x && this.mouse.x < (boat.x + boat.w) &&
+      this.mouse.y > boat.y && this.mouse.y < (boat.y + boat.h)){
+        return true
+      }else{
+        return false;
+      }
+  }
+
 
   Game.prototype.drawshape = function(context, shape, fill) {
-      //context.fillStyle = fill;
-      console.log("DRAW SHAPE");
+      context.fillStyle = fill;
+      //console.log("DRAW SHAPE");
       this.mouse.x = shape.x;
       this.mouse.y = shape.y;
-
-      console.log("MI BOAT", shape);
-
     // We can skip the drawing of elements that have moved off the screen:
     if (shape.x > this.gameDetails.width || shape.y > this.gameDetails.height ||
         shape.x + shape.w < 0 || shape.y + shape.h < 0) {
@@ -262,36 +358,118 @@
       if(posX >= ceil.x && posX < (ceil.x + this.gameDetails.ceilWidth) &&
           posY >= ceil.y && posY <(ceil.y + this.gameDetails.ceilHeight)){
 
-        //console.log("Está en la celda ", i, maxX, maxY);
-        /*for(var j = 0;j<this.board.length; j++){
-          var lastCeil = this.board[j];
-          if(maxX >= lastCeil.x && maxX < (lastCeil.x + this.gameDetails.ceilWidth) &&
-              maxY >= lastCeil.y && maxY <(lastCeil.y + this.gameDetails.ceilHeight)){
-                console.log("Barco ENTERO", j);
+              var lastPosition = i + ((boat.size - 1) * 10);
+              //this.isPossibleInCeil = true;
+              //this.isPossibleBoat = false;
 
-              }
-        }*/
-        var lastCeil = this.board[i + ((boat.size - 1) * 10)];
-        console.log(i + ((boat.size - 1) * 10));
-        if(lastCeil){
-          console.log("x   ",maxX, lastCeil.x, lastCeil.x + this.gameDetails.ceilWidth );
-          console.log("y   ",maxY, lastCeil.y, lastCeil.y+ this.gameDetails.ceilHeight );
-          if(maxX >= lastCeil.x && maxX < (lastCeil.x + this.gameDetails.ceilWidth) &&
-             maxY >= lastCeil.y && maxY <(lastCeil.y + this.gameDetails.ceilHeight)
-            ){
-                console.log("Barco ENTERO", i);
-
+              var count = 1;
+              var boatInBoard = false;
+              this.ceilsInBoat = [];
+              for(var pos = i; pos<= lastPosition; pos=pos+this.gameDetails.columns){
+                this.ceilsInBoat.push(pos);
+                var lastCeil = this.board[pos];
+                if(lastCeil && maxX >= lastCeil.x && maxX < (lastCeil.x + this.gameDetails.ceilWidth) &&
+                   maxY >= lastCeil.y && maxY <(lastCeil.y + this.gameDetails.ceilHeight)){
+                      boatInBoard = true;
+                }
               }
 
-          }
+              this.isPossibleInCeil = true;
+              this.isPossibleBoat = false;
+
+              if( JSON.stringify(this.myLastSel) === JSON.stringify(this.mySel) ){
+                console.log("same boat");
+                if(!this._equalRowOrColumn(this.ceilsInBoat, this.mySel.data.ceils)){
+                  console.log("distinc");
+                  for(var j=0;j<this.mySel.data.ceils.length;j++){
+                    var ceil = this.board[this.mySel.data.ceils[j]];
+                    ceil.boat = false;
+                  }
+
+                  for(var j=0;j<this.ceilsInBoat.length;j++){
+                    var ceil = this.board[this.ceilsInBoat[j]];
+                    console.log("ceil ", ceil);
+                    if(ceil && ceil.boat == true){
+                        this.isPossibleInCeil = false;
+                    }
+                  }
+                }else{
+                  this.isPossibleInCeil = true;
+                }
+             }else{
+               console.log("otro boat");
+                 if(!this._equalRowOrColumn(this.ceilsInBoat, this.mySel.data.ceils)){
+                   console.log("distinc");
+                   for(var j=0;j<this.mySel.data.ceils.length;j++){
+                     var ceil = this.board[this.mySel.data.ceils[j]];
+                     ceil.boat = false;
+                   }
+
+                   for(var j=0;j<this.ceilsInBoat.length;j++){
+                     var ceil = this.board[this.ceilsInBoat[j]];
+                     console.log("ceil ", ceil);
+                     if(ceil && ceil.boat == true){
+                         this.isPossibleInCeil = false;
+                     }
+                   }
+               }
+             }
+
+
+              console.log(this.ceilsInBoat, this.ceilsInBoat.length);
+
+
+              console.log("is Possible In Ceil : ", this.isPossibleInCeil);
+
+
+
+              if(boatInBoard && this.isPossibleInCeil){
+
+                this.isPossibleBoat = true;
+              }else{
+                this.isPossibleBoat = false;
+              }
+
+
        }
     }
   }
 
 
   Game.prototype._mouseUp= function(){
+
+
+    if(this.mySel && !this.isPossibleBoat){
+      console.log(this.canvasValid, this.mySel);
+      this.mySel.x = this.mySel.startX;
+      this.mySel.y = this.mySel.startY;
+      this.invalidate();
+      //this.draw();
+
+    }else if(this.mySel && this.isPossibleInCeil){
+      this.mySel.data.ceils = this.ceilsInBoat;
+      this.myLastSel = this.mySel;
+      for(var j=0;j<this.ceilsInBoat.length;j++){
+        var ceil = this.board[this.ceilsInBoat[j]];
+            ceil.boat = true;
+      }
+    }
+
     this.isDrag = false;
     this.canvas.onmousemove = null;
+  }
+
+  Game.prototype._equalRowOrColumn = function(val1, val2){
+    var res = true;
+    if(val1.length != val2.length){
+      return false;
+    }
+    for(var i = 1; i<val1.length;i++){
+      if(val1[i] != val2[i]){
+        return false;
+      }
+    }
+    return res;
   }
 
   Game.prototype._mouseMove = function(e){
