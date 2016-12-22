@@ -322,8 +322,10 @@
     console.log(this.mouse.x, this.mouse.y,  boat.x, boat.x + boat.w, boat.y, boat.y + boat.h);
     if(this.mouse.x > boat.x && this.mouse.x < (boat.x + boat.w) &&
       this.mouse.y > boat.y && this.mouse.y < (boat.y + boat.h)){
+        console.log(true);
         return true
       }else{
+        console.log(false);
         return false;
       }
   }
@@ -380,7 +382,6 @@
               if( JSON.stringify(this.myLastSel) === JSON.stringify(this.mySel) ){
                 console.log("same boat");
                 if(!this._equalRowOrColumn(this.ceilsInBoat, this.mySel.data.ceils)){
-                  console.log("distinc");
                   for(var j=0;j<this.mySel.data.ceils.length;j++){
                     var ceil = this.board[this.mySel.data.ceils[j]];
                     ceil.boat = false;
@@ -388,7 +389,6 @@
 
                   for(var j=0;j<this.ceilsInBoat.length;j++){
                     var ceil = this.board[this.ceilsInBoat[j]];
-                    console.log("ceil ", ceil);
                     if(ceil && ceil.boat == true){
                         this.isPossibleInCeil = false;
                     }
@@ -399,7 +399,6 @@
              }else{
                console.log("otro boat");
                  if(!this._equalRowOrColumn(this.ceilsInBoat, this.mySel.data.ceils)){
-                   console.log("distinc");
                    for(var j=0;j<this.mySel.data.ceils.length;j++){
                      var ceil = this.board[this.mySel.data.ceils[j]];
                      ceil.boat = false;
@@ -407,7 +406,6 @@
 
                    for(var j=0;j<this.ceilsInBoat.length;j++){
                      var ceil = this.board[this.ceilsInBoat[j]];
-                     console.log("ceil ", ceil);
                      if(ceil && ceil.boat == true){
                          this.isPossibleInCeil = false;
                      }
