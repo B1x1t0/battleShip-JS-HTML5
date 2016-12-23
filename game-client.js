@@ -127,10 +127,10 @@
     this.canvas.onmouseup = this._mouseUp.bind(this);
     this.canvas.onclick = this._onClickAction.bind(this);
 
-    var boat = new this.Boat(3,10,10,0,'vertical',8, 8);
-    var boat2 = new this.Boat(2,10,100,0,'vertical',10, 10);
+    var boat = new this.Boat(3,10,10,0,'vertical',28, 28);
+    var boat2 = new this.Boat(2,10,200,0,'vertical',28, 25);
 
-    var buttonOrientation = new this.Button(200,200,50,30,'ortientation',null);
+    var buttonOrientation = new this.Button(200,400,50,30,'orientation',null);
     this.buttons.push(buttonOrientation);
     this.boats.push(boat2);
     this.boats.push(boat);
@@ -194,7 +194,7 @@
     this.ctx.lineWidth =  '1';
     this.ctx.beginPath();
     this.ctx.fillColor = 'rgb(33,67,31)';
-    this.ctx.rect(x , y, w, h * size);
+    this.ctx.rect(x , y, w, h);
     this.ctx.fill();
   };
 
@@ -225,50 +225,19 @@
 
 
   Game.prototype._onClickAction = function(e){
-    //console.log("click ", e);
-    /*this.isPossibleInCeil = true;
-    this.isPossibleBoat = false;
+
     this._getMouse(e);
-    this.clear(this.helpCtx);
-    var l = this.boats.length;
+    var l = this.buttons.length;
     //console.log(this.boats, this.boats.length);
     for (var i = l-1; i >= 0; i--) {
       // draw shape onto ghost context
-      //console.log("boooooatsss ",this.boats[i], i);
-      console.log(this.mouse.x, this.boats[i].x);
-      console.log(this._clickOnBoat(this.boats[i]));
-      if(this._clickOnBoat(this.boats[i])){
-          this.drawshape(this.helpCtx, this.boats[i], 'red', 'black');
+      if(this._clickOnButton(this.buttons[i])){
+        console.log("draw" , this.buttons[i]);
 
-          // get image data at the mouse x,y pixel
-          var imageData = this.helpCtx.getImageData(this.mouse.x, this.mouse.y, 1, 1);
-          console.log(imageData, imageData.data[3]);
-          var index = (this.mouse.x + this.mouse.y * imageData.width) * 4;
-
-          // if the mouse pixel exists, select and break
-          if (imageData.data[3] > 0) {
-            this.mySel = this.boats[i];
-            console.log("SELECTION",this.mySel);
-            this.offsetx = this.mouse.x - this.mySel.x;
-            this.offsety = this.mouse.y - this.mySel.y;
-            this.mySel.x = this.mouse.x - this.offsetx;
-            this.mySel.y = this.mouse.y - this.offsety;
-            this.isDrag = true;
-            this.canvas.onmousemove = this._mouseMove.bind(this);
-            this.invalidate();
-            this.clear(this.helpCtx);
-            return;
-          }
       }
 
     }
-    // havent returned means we have selected nothing
-    //this.boatz[i] = this.mySel;
-    this.mySel = null;
-    // clear the ghost canvas for next time
-    this.clear(this.helpCtx);
-    // invalidate because we might need the selection border to disappear
-    this.invalidate();*/
+
   };
 
 
@@ -280,10 +249,8 @@
     //console.log(this.boats, this.boats.length);
     for (var i = l-1; i >= 0; i--) {
       // draw shape onto ghost context
-      //console.log("boooooatsss ",this.boats[i], i);
-      //console.log(this.mouse.x, this.boats[i].x);
-      //console.log(this._clickOnBoat(this.boats[i]));
       if(this._clickOnBoat(this.boats[i])){
+        console.log("draw" , this.boats[i]);
           this.drawshape(this.helpCtx, this.boats[i], 'red', 'black');
 
           // get image data at the mouse x,y pixel
@@ -318,21 +285,27 @@
   };
 
   Game.prototype._clickOnBoat = function(boat){
-
-    console.log(this.mouse.x, this.mouse.y,  boat.x, boat.x + boat.w, boat.y, boat.y + boat.h);
     if(this.mouse.x > boat.x && this.mouse.x < (boat.x + boat.w) &&
       this.mouse.y > boat.y && this.mouse.y < (boat.y + boat.h)){
-        console.log(true);
         return true
       }else{
-        console.log(false);
+        return false;
+      }
+  }
+
+  Game.prototype._clickOnButton = function(button){
+    if(this.mouse.x > button.x && this.mouse.x < (button.x + button.w) &&
+      this.mouse.y > button.y && this.mouse.y < (button.y + button.h)){
+        return true
+      }else{
         return false;
       }
   }
 
 
+
   Game.prototype.drawshape = function(context, shape, fill) {
-      context.fillStyle = fill;
+      //context.fillStyle = fill;
       //console.log("DRAW SHAPE");
       this.mouse.x = shape.x;
       this.mouse.y = shape.y;
