@@ -39,13 +39,16 @@
     this.boardEnemy = {};
     this.boats = [];
 
-    this.Boat = function(size,x,y,orientation,img, w, h){
+    this.Boat = function(size,x,y,orientation,img, w, h,id){
+      this.id = id;
       this.size =  size || 3;
       this.img = {};
       this.x = x || 0;
       this.y = y || 0;
       this.w = w;
-      this.h = h * size;
+      this.h = h;
+      this.width = w;
+      this.height = h;
       this.orientation = orientation || 'vertical';
       this.startX = x;
       this.startY = y;
@@ -61,6 +64,9 @@
       this.w = w;
       this.h = h;
       this.type = type || null;
+      this.fun = function(boat){
+        boat.orientation = boat.orientation == 'vertical'? 'horizontal': 'vertical';
+      }
     };
 
     this.buttons = [];
@@ -127,8 +133,8 @@
     this.canvas.onmouseup = this._mouseUp.bind(this);
     this.canvas.onclick = this._onClickAction.bind(this);
 
-    var boat = new this.Boat(3,10,10,0,'vertical',28, 28);
-    var boat2 = new this.Boat(2,10,200,0,'vertical',28, 25);
+    var boat = new this.Boat(3,10,10,0,'vertical',28, 28,1);
+    var boat2 = new this.Boat(2,10,200,0,'vertical',28, 25,2);
 
     var buttonOrientation = new this.Button(200,400,50,30,'orientation',null);
     this.buttons.push(buttonOrientation);
@@ -165,7 +171,13 @@
 
   Game.prototype._drawBoats = function(){
     for(var i = 0; i<this.boats.length; i++){
-      this._drawABoat(this.boats[i].x, this.boats[i].y, this.boats[i].size, this.boats[i].rotation, this.boats[i].w, this.boats[i].h)
+      var boat = this.boats[i];
+      //console.log(boat);
+
+      boat.w = (boat.orientation == 'vertical') ? boat.width : boat.width * boat.size;
+      boat.h = (boat.orientation == 'vertical') ? boat.height * boat.size : boat.height;
+      //console.log(boat);
+      this._drawABoat(boat.x, boat.y, boat.w, boat.h)
     }
   }
 
@@ -190,7 +202,7 @@
   };
 
 
-  Game.prototype._drawABoat = function(x, y, size , rotation, w, h){
+  Game.prototype._drawABoat = function(x, y, w, h){
     this.ctx.lineWidth =  '1';
     this.ctx.beginPath();
     this.ctx.fillColor = 'rgb(33,67,31)';
@@ -232,8 +244,11 @@
     for (var i = l-1; i >= 0; i--) {
       // draw shape onto ghost context
       if(this._clickOnButton(this.buttons[i])){
-        console.log("draw" , this.buttons[i]);
-
+        var button = this.buttons[i];
+        button.fun(this.myLastSel);
+        console.log(this.mySel, this.myLastSel);
+        this._checkBoatInCell(this.myLastSel);
+        this.invalidate();
       }
 
     }
@@ -325,22 +340,23 @@
   Game.prototype._checkBoatInCell = function(boat){
     var posX = boat.x;
     var posY = boat.y;
-    var maxX = boat.orientation == 'horizontal'? this.gameDetails.ceilWidth * boat.size + boat.x: boat.x;
+    var maxX = boat.orientation == 'horizontal'? (this.gameDetails.ceilWidth * (boat.size- 1)) + boat.x: boat.x;
     var maxY = (boat.orientation == 'vertical') ? (this.gameDetails.ceilHeight * (boat.size- 1))+ boat.y : boat.y;
+
 
     for(var i = 0;i<this.board.length; i++){
       var ceil = this.board[i];
       if(posX >= ceil.x && posX < (ceil.x + this.gameDetails.ceilWidth) &&
           posY >= ceil.y && posY <(ceil.y + this.gameDetails.ceilHeight)){
 
-              var lastPosition = i + ((boat.size - 1) * 10);
+              var lastPosition = (boat.orientation == 'vertical') ? i + ((boat.size - 1) * 10) : i + (boat.size - 1);
               //this.isPossibleInCeil = true;
               //this.isPossibleBoat = false;
-
               var count = 1;
               var boatInBoard = false;
               this.ceilsInBoat = [];
-              for(var pos = i; pos<= lastPosition; pos=pos+this.gameDetails.columns){
+              var sum = (boat.orientation == 'vertical') ? this.gameDetails.columns : 1;
+              for(var pos = i; pos<= lastPosition; pos=pos+sum){
                 this.ceilsInBoat.push(pos);
                 var lastCeil = this.board[pos];
                 if(lastCeil && maxX >= lastCeil.x && maxX < (lastCeil.x + this.gameDetails.ceilWidth) &&
@@ -352,11 +368,13 @@
               this.isPossibleInCeil = true;
               this.isPossibleBoat = false;
 
-              if( JSON.stringify(this.myLastSel) === JSON.stringify(this.mySel) ){
-                console.log("same boat");
-                if(!this._equalRowOrColumn(this.ceilsInBoat, this.mySel.data.ceils)){
-                  for(var j=0;j<this.mySel.data.ceils.length;j++){
-                    var ceil = this.board[this.mySel.data.ceils[j]];
+            if( this.myLastSel.id == boat.id ){
+              console.log("if");
+
+                if(!this._equalRowOrColumn(this.ceilsInBoat, boat.data.ceils)){
+                  console.log("if if");
+                  for(var j=0;j<boat.data.ceils.length;j++){
+                    var ceil = this.board[boat.data.ceils[j]];
                     ceil.boat = false;
                   }
 
@@ -367,13 +385,15 @@
                     }
                   }
                 }else{
+                  console.log("if else");
                   this.isPossibleInCeil = true;
                 }
              }else{
-               console.log("otro boat");
-                 if(!this._equalRowOrColumn(this.ceilsInBoat, this.mySel.data.ceils)){
-                   for(var j=0;j<this.mySel.data.ceils.length;j++){
-                     var ceil = this.board[this.mySel.data.ceils[j]];
+               console.log("else");
+                 if(!this._equalRowOrColumn(this.ceilsInBoat, boat.data.ceils)){
+                   console.log("else if");
+                   for(var j=0;j<boat.data.ceils.length;j++){
+                     var ceil = this.board[boat.data.ceils[j]];
                      ceil.boat = false;
                    }
 
@@ -386,8 +406,6 @@
                }
              }
 
-
-              console.log(this.ceilsInBoat, this.ceilsInBoat.length);
 
 
               console.log("is Possible In Ceil : ", this.isPossibleInCeil);
