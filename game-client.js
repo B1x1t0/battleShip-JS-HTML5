@@ -38,6 +38,7 @@
     this.board = {};
     this.boardEnemy = {};
     this.boats = [];
+    this.boatsEnemy = [];
 
     this.Boat = function(size,x,y,orientation,img, w, h,id){
       this.id = id;
@@ -140,7 +141,7 @@
     this.buttons.push(buttonOrientation);
     this.boats.push(boat2);
     this.boats.push(boat);
-    this._drawBoats();
+    this._drawBoats(this.boats);
     this._drawButtons();
     this._drawABoard(0,0, this.board);
     this._drawABoard(500,100, this.boardEnemy);
@@ -169,9 +170,9 @@
     return board;
   };
 
-  Game.prototype._drawBoats = function(){
-    for(var i = 0; i<this.boats.length; i++){
-      var boat = this.boats[i];
+  Game.prototype._drawBoats = function(boats){
+    for(var i = 0; i<boats.length; i++){
+      var boat = boats[i];
       //console.log(boat);
 
       boat.w = (boat.orientation == 'vertical') ? boat.width : boat.width * boat.size;
@@ -226,7 +227,9 @@
 
       this._drawABoard(0,0, this.board);
       this._drawABoard(500,100, this.boardEnemy);
-      this._drawBoats();
+      this._drawBoats(this.boats);
+      this._drawBoats(this.boatsEnemy);
+
       this._drawButtons();
 
 
@@ -481,6 +484,13 @@
     }
   };
 
+  Game.prototype.setEnemyBoats = function(){
+    this.boatsEnemy = JSON.parse(JSON.stringify(this.boats));
+    this.boatsEnemy[0].x = 500;
+    this.invalidate();
+    return this.boatsEnemy;
+  }
+
   Game.prototype.clear = function(c){
       c.clearRect(0, 0, this.gameDetails.width, this.gameDetails.height);
   };
@@ -512,7 +522,8 @@
 
 
   window.battleShip = {
-  		init: battleShip.init.bind(battleShip)
+  		init: battleShip.init.bind(battleShip),
+      enemy: battleShip.setEnemyBoats.bind(battleShip)
   }
 
 })(config);
