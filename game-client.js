@@ -97,7 +97,7 @@
     this.myLastSel = {};
     this.offsetx = {};
     this.offsety = {};
-    this.isPossibleInCeil = true;
+    this.isPossibleInCeil = false;
     this.isPossibleBoat = false;
     this.ceilsInBoat = [];
     this.lastCeilsInBoat = [];
@@ -340,6 +340,8 @@
   Game.prototype._checkBoatInCell = function(boat){
     var posX = boat.x;
     var posY = boat.y;
+    this.isPossibleBoat = false;
+
     var maxX = boat.orientation == 'horizontal'? (this.gameDetails.ceilWidth * (boat.size- 1)) + boat.x: boat.x;
     var maxY = (boat.orientation == 'vertical') ? (this.gameDetails.ceilHeight * (boat.size- 1))+ boat.y : boat.y;
 
@@ -348,6 +350,8 @@
       var ceil = this.board[i];
       if(posX >= ceil.x && posX < (ceil.x + this.gameDetails.ceilWidth) &&
           posY >= ceil.y && posY <(ceil.y + this.gameDetails.ceilHeight)){
+
+
 
               var lastPosition = (boat.orientation == 'vertical') ? i + ((boat.size - 1) * 10) : i + (boat.size - 1);
               //this.isPossibleInCeil = true;
@@ -365,19 +369,23 @@
                 }
               }
 
-              this.isPossibleInCeil = true;
+              this.isPossibleInCeil = false;
               this.isPossibleBoat = false;
 
             if( this.myLastSel.id == boat.id ){
-              console.log("if");
+                console.log("if");
 
                 if(!this._equalRowOrColumn(this.ceilsInBoat, boat.data.ceils)){
-                  console.log("if if");
+                  this.isPossibleInCeil = true;
+
+                  console.log("if if", boat.data.ceils);
                   for(var j=0;j<boat.data.ceils.length;j++){
                     var ceil = this.board[boat.data.ceils[j]];
                     ceil.boat = false;
+                    console.log("poniendo ceils a false ", ceil.boat);
                   }
 
+                  console.log("ceils in boat ", this.ceilsInBoat);
                   for(var j=0;j<this.ceilsInBoat.length;j++){
                     var ceil = this.board[this.ceilsInBoat[j]];
                     if(ceil && ceil.boat == true){
@@ -386,10 +394,11 @@
                   }
                 }else{
                   console.log("if else");
-                  this.isPossibleInCeil = true;
+                  //this.isPossibleInCeil = true;
                 }
              }else{
                console.log("else");
+                  this.isPossibleInCeil = true;
                  if(!this._equalRowOrColumn(this.ceilsInBoat, boat.data.ceils)){
                    console.log("else if");
                    for(var j=0;j<boat.data.ceils.length;j++){
